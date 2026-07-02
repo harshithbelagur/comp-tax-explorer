@@ -42,13 +42,41 @@ browser and nothing you type ever leaves your device.
 7. **🔗 Copy share link** — every input is encoded in the URL, so you can bookmark or
    share your exact scenario. Opening the link restores it.
 
-## What it models
-- **Status-aware:** US citizen, green card, H-1B/L-1/O-1, TN (USMCA), and F-1/J-1
-  nonresident — including FICA exemption and standard-deduction eligibility.
-- **Tax shelters:** pre-tax vs. Roth vs. after-tax, with the shared $23.5k elective
-  limit and the $70k §415(c) cap enforced; state-specific HSA quirks (e.g. CA/NJ).
-- **State comparison** across 15 states, including no-income-tax states.
-- **Long-term projection** with an optional "fair comparison" mode.
+## Features
+
+**💰 Full take-home breakdown**
+- Federal income tax, state tax, and FICA (Social Security + Medicare, incl. the Additional Medicare surtax) in one view
+- Enter your real comp mix: base, bonus, RSU, and ESPP (with purchase discount)
+- Effective *and* marginal rate, plus a visual "where every dollar goes" bar
+
+**🛂 Visa & residency aware** — rare in tax tools
+- US citizen, green card, H-1B / L-1 / O-1, TN (USMCA), and F-1 / J-1 nonresident
+- Correctly models FICA exemption for nonresident students and standard-deduction eligibility
+
+**🎚️ Live contribution sliders**
+- Traditional 401(k), Roth 401(k), HSA, Roth IRA / backdoor, and mega-backdoor Roth
+- Drag any one and watch your tax change instantly — *green = saves tax now, blue = grows tax-free later*
+- Enforces the ~$23.5k elective limit, $70k §415(c) cap, and IRA/HSA limits, with over-contribution warnings
+- Detects when your income requires a **backdoor** Roth IRA, and flags state HSA quirks (CA/NJ)
+
+**🗺️ Compare 15 states at once**
+- Take-home ranked by state, including no-income-tax states — great for relocation or offer decisions
+
+**⚖️ 401(k) strategy comparison**
+- No-401k vs. pre-tax-max vs. pre-tax + mega-backdoor, side by side, with a true "net worth added this year" metric
+
+**🧮 Per-paycheck contribution calculator**
+- Enter your paycheck and a target take-home → get the exact **%** to set for pre-tax / Roth / after-tax at Fidelity, Vanguard, etc.
+- **"Cost of waiting"** readout: the extra tax you've paid by contributing Roth instead of pre-tax so far this year
+
+**📈 Retirement projection**
+- Grows this year's contributions to retirement, split Roth vs. Traditional, showing *spendable* (after-tax) value
+- **Fair-comparison mode** invests Traditional's up-front tax savings in a taxable side account for a true apples-to-apples result
+
+**🔗 Shareable & private by design**
+- Every input is encoded in the URL — bookmark or share your exact scenario with one click
+- **100% client-side:** no backend, no account, no tracking — nothing ever leaves your browser
+- One HTML file, no build step, open source (MIT)
 
 ## Run it locally
 It's a single static file — just open it:
