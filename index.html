@@ -178,7 +178,18 @@
   .guide-body { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 22px 16px; }
   .guide-body ol { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; }
   .guide-body li { margin-bottom: 8px; }
-  .guide-body .gnote { font-size: 11.5px; color: var(--muted); margin: 12px 0 0; }
+  .guide-body .gnote { font-size: 11.5px; color: var(--muted); margin: 14px 0 0; }
+  html { scroll-behavior: smooth; }
+  [id^="sec-"], #inputs { scroll-margin-top: 14px; }
+  .gintro { font-size: 13.5px; margin: 10px 0 0; }
+  .guide-map { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px; }
+  @media (max-width: 700px) { .guide-map { grid-template-columns: 1fr; } }
+  .gcol { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+  .gcol-head { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
+  .gcol a { display: block; text-decoration: none; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 9px; padding: 8px 11px; margin-bottom: 8px; font-size: 13px; font-weight: 600; transition: border-color .15s; }
+  .gcol a:last-child { margin-bottom: 0; }
+  .gcol a:hover { border-color: var(--accent); }
+  .gcol a small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 3px; }
   .banner {
     background: linear-gradient(90deg, rgba(255,206,107,.16), rgba(255,122,138,.16));
     border-bottom: 1px solid var(--line);
@@ -198,19 +209,26 @@
   <button id="shareBtn" class="sharebtn">🔗 Copy share link</button>
 </header>
 
-<details class="guide">
-  <summary>📖 How to use this — 30-second guide</summary>
+<details class="guide" open>
+  <summary>📖 New here? What's where — click to jump</summary>
   <div class="guide-body">
-    <ol>
-      <li><b>Enter your pay</b> (top-left): base, bonus, RSU, ESPP — then pick your <b>filing status, visa/residency, and state</b>.</li>
-      <li><b>Read your take-home</b> up top: gross, total tax, net, and your effective/marginal rate, with a breakdown of where every dollar goes.</li>
-      <li><b>Drag the shelter sliders</b> (401k, Roth, HSA, IRA, mega-backdoor) and watch the tax impact update live — <span style="color:var(--accent2)">green</span> saves tax now, <span style="color:var(--accent)">blue</span> grows tax-free later.</li>
-      <li><b>Compare</b> take-home across states and across 401(k) strategies in the tables.</li>
-      <li><b>Per-paycheck calculator:</b> enter your salary per check and a target take-home → it tells you the exact <b>%</b> to set for pre-tax / Roth / after-tax at your provider (e.g. Fidelity).</li>
-      <li><b>Project</b> where your Roth vs Traditional dollars land at retirement — tick <b>Fair comparison</b> for the rigorous apples-to-apples version.</li>
-      <li>Hit <b>🔗 Copy share link</b> to bookmark or send your exact setup — every input is saved in the URL.</li>
-    </ol>
-    <p class="gnote">Runs 100% in your browser — nothing is uploaded or stored. Educational estimates only, not tax advice.</p>
+    <p class="gintro">The screen has two halves: <b>you type on the LEFT, your answers appear on the RIGHT.</b> Click any box below to scroll straight to it.</p>
+    <div class="guide-map">
+      <div class="gcol">
+        <div class="gcol-head">← You enter (left side)</div>
+        <a href="#inputs">💵 Your pay &amp; status<small>Base, bonus, RSU, ESPP — plus filing status, visa/residency &amp; state</small></a>
+        <a href="#sec-shelters">🎚️ Contribution sliders<small>401k, Roth, HSA, IRA, mega-backdoor — drag to see the tax impact live</small></a>
+      </div>
+      <div class="gcol">
+        <div class="gcol-head">You get (right side) →</div>
+        <a href="#sec-summary">📊 Take-home &amp; where it goes<small>Net pay, effective/marginal rate, full dollar breakdown</small></a>
+        <a href="#sec-states">🗺️ Compare states<small>Take-home ranked across 15 states</small></a>
+        <a href="#sec-scenarios">⚖️ 401(k) strategies<small>No-401k vs pre-tax vs mega-backdoor, side by side</small></a>
+        <a href="#sec-calculator">🧮 Per-paycheck calculator<small>Exact % to set at Fidelity/Vanguard for a target take-home</small></a>
+        <a href="#sec-projection">📈 Retirement projection<small>Your Roth vs Traditional dollars grown to retirement</small></a>
+      </div>
+    </div>
+    <p class="gnote">💡 Every input auto-saves to the URL — hit <b>🔗 Copy share link</b> (top-right) to bookmark or share your exact setup. Runs 100% in your browser; nothing is uploaded. Educational estimates only, not tax advice.</p>
   </div>
 </details>
 
@@ -264,7 +282,7 @@
       <div class="toggle-note" id="statusNote"></div>
     </div>
 
-    <h2 style="margin-top:18px;">Retirement &amp; Tax Shelters</h2>
+    <h2 style="margin-top:18px;" id="sec-shelters">Retirement &amp; Tax Shelters</h2>
     <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 14px;">Drag a slider — the tax impact updates live. <span class="tag pre">pre-tax</span> lowers taxes now; <span class="tag roth">Roth</span> is taxed now, tax-free later.</p>
 
     <div class="ctl">
@@ -327,7 +345,7 @@
 
   <!-- ============ RESULTS ============ -->
   <div>
-    <div class="cards">
+    <div class="cards" id="sec-summary">
       <div class="card blue"><div class="k">Gross comp</div><div class="v" id="cGross">—</div></div>
       <div class="card warn"><div class="k">Total tax</div><div class="v" id="cTax">—</div></div>
       <div class="card green"><div class="k">Take-home</div><div class="v" id="cNet">—</div></div>
@@ -356,7 +374,7 @@
       </details>
     </div>
 
-    <div class="panel" style="margin-top:20px;">
+    <div class="panel" style="margin-top:20px;" id="sec-states">
       <h2>Compare take-home across states</h2>
       <table class="compare">
         <thead><tr><th>State</th><th>State tax</th><th>Total tax</th><th>Effective</th><th>Take-home</th></tr></thead>
@@ -364,8 +382,8 @@
       </table>
     </div>
 
-    <div class="panel" style="margin-top:20px;">
-      <h2>Compare 401(k) scenarios <span style="text-transform:none;color:#6f7aa0;font-weight:400">— in your selected state</span></h2>
+    <div class="panel" style="margin-top:20px;" id="sec-scenarios">
+      <h2>Compare 401(k) scenarios<span style="text-transform:none;color:#6f7aa0;font-weight:400">— in your selected state</span></h2>
       <table class="compare">
         <thead><tr><th>Scenario</th><th>Pre-tax</th><th>After-tax</th><th>Total tax</th><th>Cash take-home</th><th>Saved for retirement</th><th>Net worth Δ/yr</th></tr></thead>
         <tbody id="scenarios"></tbody>
@@ -380,7 +398,7 @@
       <ul class="notes" id="shelterExplain"></ul>
     </div>
 
-    <div class="panel" style="margin-top:20px;">
+    <div class="panel" style="margin-top:20px;" id="sec-calculator">
       <h2>Per-paycheck contribution calculator</h2>
       <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 12px;">Strategy: max your elective as <b>pre-tax</b>, hit a target take-home, and route the rest to <b>after-tax → Roth</b>. Uses the filing status &amp; state selected on the left.</p>
       <div class="pc_grid">
@@ -433,7 +451,7 @@
       <div id="pc_out"></div>
     </div>
 
-    <div class="panel" style="margin-top:20px;">
+    <div class="panel" style="margin-top:20px;" id="sec-projection">
       <h2>Projected year-end balance &amp; long-term value</h2>
       <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 12px;">Where this year's 401(k) money lands by tax treatment (using the calculator above), then grown to retirement. After-tax is treated as converted to Roth.</p>
       <div class="pc_grid">
