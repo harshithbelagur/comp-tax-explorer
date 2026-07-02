@@ -19,7 +19,7 @@ backdoor, HSA, and mega-backdoor Roth contributions change your taxes.
 **One HTML file. No backend, no build step, no tracking.** Everything runs in your
 browser and nothing you type ever leaves your device.
 
-**▶️ Live app:** https://harshith99-comp-tax-explorer.static.hf.space
+**▶️ Live app:** https://harshith99-us-tax-explorer.static.hf.space
 
 ![screenshot](thumbnail.png)
 
@@ -81,8 +81,8 @@ browser and nothing you type ever leaves your device.
 ## Run it locally
 It's a single static file — just open it:
 ```bash
-git clone https://github.com/harshithbelagur/comp-tax-explorer.git
-cd comp-tax-explorer
+git clone https://github.com/harshithbelagur/us-tax-explorer.git
+cd us-tax-explorer
 open index.html      # or double-click it, or: python3 -m http.server
 ```
 
