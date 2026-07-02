@@ -190,6 +190,28 @@
   .gcol a:last-child { margin-bottom: 0; }
   .gcol a:hover { border-color: var(--accent); }
   .gcol a small { display: block; color: var(--muted); font-size: 11px; font-weight: 400; margin-top: 3px; }
+  /* guided walkthrough */
+  .tourbar { max-width: 1180px; margin: 6px auto 0; padding: 0 24px; font-size: 13px; color: var(--muted); }
+  .tour-highlight {
+    position: relative; z-index: 1001; border-radius: 14px;
+    box-shadow: 0 0 0 3px var(--accent), 0 0 0 100vmax rgba(6,8,18,.74);
+    transition: box-shadow .2s ease;
+  }
+  .tourcard {
+    display: none; position: fixed; z-index: 1002; left: 50%; bottom: 26px;
+    transform: translateX(-50%); width: min(440px, calc(100vw - 32px));
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 14px;
+    padding: 16px 18px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+  }
+  .tourcount { font-size: 11px; text-transform: uppercase; letter-spacing: .7px; color: var(--accent); margin-bottom: 4px; }
+  .tourtitle { font-size: 16px; font-weight: 700; margin-bottom: 5px; }
+  .tourtext { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+  .tournav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; }
+  .tbtn { background: var(--panel2); color: var(--text); border: 1px solid var(--line); border-radius: 9px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+  .tbtn:hover { border-color: var(--accent); }
+  .tbtn.primary { background: var(--accent); color: #0f1221; border-color: var(--accent); font-weight: 600; }
+  .tourskip { position: absolute; top: 8px; right: 11px; background: none; border: none; color: var(--muted); font-size: 20px; line-height: 1; cursor: pointer; }
+  .tourskip:hover { color: var(--text); }
   .banner {
     background: linear-gradient(90deg, rgba(255,206,107,.16), rgba(255,122,138,.16));
     border-bottom: 1px solid var(--line);
@@ -209,28 +231,19 @@
   <button id="shareBtn" class="sharebtn">🔗 Copy share link</button>
 </header>
 
-<details class="guide" open>
-  <summary>📖 New here? What's where — click to jump</summary>
-  <div class="guide-body">
-    <p class="gintro">The screen has two halves: <b>you type on the LEFT, your answers appear on the RIGHT.</b> Click any box below to scroll straight to it.</p>
-    <div class="guide-map">
-      <div class="gcol">
-        <div class="gcol-head">← You enter (left side)</div>
-        <a href="#inputs">💵 Your pay &amp; status<small>Base, bonus, RSU, ESPP — plus filing status, visa/residency &amp; state</small></a>
-        <a href="#sec-shelters">🎚️ Contribution sliders<small>401k, Roth, HSA, IRA, mega-backdoor — drag to see the tax impact live</small></a>
-      </div>
-      <div class="gcol">
-        <div class="gcol-head">You get (right side) →</div>
-        <a href="#sec-summary">📊 Take-home &amp; where it goes<small>Net pay, effective/marginal rate, full dollar breakdown</small></a>
-        <a href="#sec-states">🗺️ Compare states<small>Take-home ranked across 15 states</small></a>
-        <a href="#sec-scenarios">⚖️ 401(k) strategies<small>No-401k vs pre-tax vs mega-backdoor, side by side</small></a>
-        <a href="#sec-calculator">🧮 Per-paycheck calculator<small>Exact % to set at Fidelity/Vanguard for a target take-home</small></a>
-        <a href="#sec-projection">📈 Retirement projection<small>Your Roth vs Traditional dollars grown to retirement</small></a>
-      </div>
-    </div>
-    <p class="gnote">💡 Every input auto-saves to the URL — hit <b>🔗 Copy share link</b> (top-right) to bookmark or share your exact setup. Runs 100% in your browser; nothing is uploaded. Educational estimates only, not tax advice.</p>
+<div class="tourbar">👋 First time here? <button id="tourBtn" class="sharebtn">▶ Take the 60-second tour</button></div>
+
+<!-- guided walkthrough -->
+<div id="tourCard" class="tourcard">
+  <button id="tourSkip" class="tourskip" aria-label="Skip tour">×</button>
+  <div class="tourcount" id="tourCount"></div>
+  <div class="tourtitle" id="tourTitle"></div>
+  <div class="tourtext" id="tourText"></div>
+  <div class="tournav">
+    <button id="tourBack" class="tbtn">← Back</button>
+    <button id="tourNext" class="tbtn primary">Next →</button>
   </div>
-</details>
+</div>
 
 <div class="wrap">
   <!-- ============ INPUTS ============ -->
@@ -282,7 +295,8 @@
       <div class="toggle-note" id="statusNote"></div>
     </div>
 
-    <h2 style="margin-top:18px;" id="sec-shelters">Retirement &amp; Tax Shelters</h2>
+    <div id="sec-shelters">
+    <h2 style="margin-top:18px;">Retirement &amp; Tax Shelters</h2>
     <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 14px;">Drag a slider — the tax impact updates live. <span class="tag pre">pre-tax</span> lowers taxes now; <span class="tag roth">Roth</span> is taxed now, tax-free later.</p>
 
     <div class="ctl">
@@ -335,6 +349,7 @@
       <input type="number" id="match" value="9000" min="0" step="500" />
     </div>
     <div class="toggle-note" id="limitNote"></div>
+    </div>
 
     <h2 style="margin-top:18px;">State</h2>
     <div class="field">
@@ -985,6 +1000,40 @@ document.querySelectorAll("input:not([type=range]),select").forEach(el => el.add
 
 loadState();   // restore a shared scenario, if any, before first render
 render();
+
+// ---------- guided walkthrough ----------
+const TOUR = [
+  { sel:"#inputs", title:"Start here — your pay & status", text:"Enter your base, bonus, RSU and ESPP, then pick your filing status, visa/residency, and state. Everything on the page updates from this." },
+  { sel:"#sec-shelters", title:"Set your contributions", text:"Drag these sliders — 401(k), Roth, HSA, IRA, mega-backdoor. Green means it lowers your tax now; blue means it grows tax-free later. Watch each one's live impact." },
+  { sel:"#sec-summary", title:"Your take-home", text:"Your net pay, total tax, and effective vs. marginal rate — recalculated instantly as you change anything on the left." },
+  { sel:"#sec-states", title:"Compare states", text:"See your take-home ranked across 15 states, including no-income-tax ones. Handy for weighing a relocation or a new offer." },
+  { sel:"#sec-scenarios", title:"401(k) strategies", text:"No-401k vs. pre-tax-max vs. pre-tax + mega-backdoor, side by side — see which adds the most to your net worth this year." },
+  { sel:"#sec-calculator", title:"Per-paycheck calculator", text:"Enter your paycheck and a target take-home, and it tells you the exact % to set for pre-tax / Roth / after-tax at Fidelity, Vanguard, etc." },
+  { sel:"#sec-projection", title:"Retirement projection", text:"Grows this year's contributions to retirement, split Roth vs. Traditional. Tick “Fair comparison” for the rigorous apples-to-apples version." },
+  { sel:"#shareBtn", title:"Save & share", text:"Every input is saved in the URL — click here to copy a link to your exact setup. That's the whole tool. Enjoy!" }
+];
+let tourIdx = 0;
+const $tour = id => document.getElementById(id);
+function clearHighlight(){ document.querySelectorAll(".tour-highlight").forEach(e => e.classList.remove("tour-highlight")); }
+function showTourStep(i){
+  clearHighlight();
+  tourIdx = i;
+  const step = TOUR[i], el = document.querySelector(step.sel);
+  if (el){ el.classList.add("tour-highlight"); el.scrollIntoView({ behavior:"smooth", block:"center" }); }
+  $tour("tourTitle").textContent = step.title;
+  $tour("tourText").textContent = step.text;
+  $tour("tourCount").textContent = "Step " + (i+1) + " of " + TOUR.length;
+  $tour("tourBack").style.visibility = i === 0 ? "hidden" : "visible";
+  $tour("tourNext").textContent = i === TOUR.length - 1 ? "Done ✓" : "Next →";
+}
+function startTour(){ $tour("tourCard").style.display = "block"; showTourStep(0); }
+function endTour(){ clearHighlight(); $tour("tourCard").style.display = "none"; try { localStorage.setItem("ctx_toured","1"); } catch(e){} }
+$tour("tourBtn").addEventListener("click", startTour);
+$tour("tourSkip").addEventListener("click", endTour);
+$tour("tourBack").addEventListener("click", () => showTourStep(Math.max(0, tourIdx - 1)));
+$tour("tourNext").addEventListener("click", () => { tourIdx === TOUR.length - 1 ? endTour() : showTourStep(tourIdx + 1); });
+// auto-start once for first-time visitors (skip if they arrived via a shared link)
+try { if (!localStorage.getItem("ctx_toured") && !location.hash) setTimeout(startTour, 500); } catch(e){}
 </script>
 </body>
 </html>
