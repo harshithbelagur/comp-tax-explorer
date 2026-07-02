@@ -1,5 +1,5 @@
 ---
-title: Comp & Tax Explorer
+title: US Tax Explorer
 emoji: 💸
 colorFrom: indigo
 colorTo: green
@@ -10,7 +10,7 @@ thumbnail: thumbnail.png
 short_description: US take-home pay by state, visa status, 401k & Roth
 ---
 
-# 💸 Comp & Tax Explorer
+# 💸 US Tax Explorer
 
 Estimate your US take-home pay across states based on your compensation mix and
 immigration/tax-residency status — and see, live, how 401(k), Roth 401(k), Roth IRA /
