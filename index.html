@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Comp & Tax Explorer</title>
+<style>
+  :root {
+    --bg: #0f1221;
+    --panel: #1a1f35;
+    --panel2: #232a45;
+    --line: #2e3656;
+    --text: #e8ecf7;
+    --muted: #9aa3c0;
+    --accent: #6c8cff;
+    --accent2: #46d6a0;
+    --warn: #ffce6b;
+    --danger: #ff7a8a;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 20% -10%, #1c2342 0%, transparent 60%), var(--bg);
+    color: var(--text);
+    line-height: 1.45;
+  }
+  header {
+    padding: 28px 24px 8px;
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+  header h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.3px; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; }
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 16px 24px 60px;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+  }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+  .panel h2 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field .hint { color: #6f7aa0; font-size: 11px; cursor: help; }
+  input[type="number"], select {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 15px;
+    outline: none;
+  }
+  input[type="number"]:focus, select:focus { border-color: var(--accent); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ctl { margin-bottom: 16px; }
+  .ctlrow { display: flex; align-items: center; gap: 10px; }
+  .ctlrow input[type="number"] { width: 104px; flex: 0 0 auto; }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 4px; background: var(--line); flex: 1; outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid #0f1221;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer; border: 2px solid #0f1221;
+  }
+  .impact { font-size: 11.5px; margin-top: 5px; min-height: 14px; color: var(--muted); }
+  .impact.save { color: var(--accent2); }
+  .impact.roth { color: var(--accent); }
+  .impact.warn { color: var(--warn); }
+  .tag { font-size: 10px; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .tag.pre { background: rgba(70,214,160,.15); color: var(--accent2); }
+  .tag.roth { background: rgba(108,140,255,.15); color: var(--accent); }
+  .toggle-note {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--panel2);
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-top: 4px;
+  }
+  /* results */
+  .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 620px) { .cards { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: linear-gradient(160deg, var(--panel2), var(--panel));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .card .k { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .card.green .v { color: var(--accent2); }
+  .card.blue .v { color: var(--accent); }
+  .card.warn .v { color: var(--warn); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: right; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  tr.total td { font-weight: 700; border-top: 2px solid var(--line); }
+  .bar {
+    height: 22px; border-radius: 6px; overflow: hidden; display: flex; margin: 4px 0 18px;
+    border: 1px solid var(--line);
+  }
+  .seg { height: 100%; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .notes { font-size: 12.5px; color: var(--muted); }
+  .notes li { margin-bottom: 5px; }
+  .flag {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px;
+    background: rgba(108,140,255,.15); color: var(--accent); margin-left: 6px;
+  }
+  .flag.warn { background: rgba(255,206,107,.15); color: var(--warn); }
+  .compare th, .compare td { padding: 8px 8px; }
+  .best { color: var(--accent2); font-weight: 600; }
+  .pc_grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 14px; }
+  .pc_pcts { display: flex; gap: 12px; margin: 8px 0 16px; }
+  .pc_pct { flex: 1; background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 14px 10px; text-align: center; }
+  .pc_pct .pcv { font-size: 28px; font-weight: 800; color: var(--accent2); }
+  .pc_pct.muted .pcv { color: var(--muted); }
+  .pc_pct .pck { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+  .pc_cost {
+    margin-top: 14px; padding: 14px 16px; border-radius: 12px;
+    background: linear-gradient(160deg, rgba(255,122,138,.14), rgba(255,206,107,.10));
+    border: 1px solid rgba(255,122,138,.35);
+  }
+  .pc_cost .pcbig { font-size: 26px; font-weight: 800; color: var(--danger); margin: 4px 0 6px; }
+  .pc_cost .pcbig span { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .sharebtn {
+    margin-top: 12px; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--accent); border-radius: 999px; padding: 7px 16px;
+    font-size: 13px; cursor: pointer; transition: background .15s;
+  }
+  .sharebtn:hover { background: var(--accent); color: #0f1221; }
+  .fairrow { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--text); margin: 8px 0 2px; cursor: pointer; }
+  .fairrow input { width: auto; }
+  .pill { cursor: pointer; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 0 24px 16px; color: #5a648a; font-size: 12px; }
+  details summary { cursor: pointer; color: var(--muted); font-size: 13px; margin-top: 10px; }
+  .guide { max-width: 1180px; margin: 4px auto 0; padding: 0 24px; }
+  .guide > summary { list-style: none; cursor: pointer; display: inline-block; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 15px; font-size: 13px; color: var(--accent); }
+  .guide > summary::-webkit-details-marker { display: none; }
+  .guide[open] > summary { margin-bottom: 10px; }
+  .guide-body { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 6px 22px 16px; }
+  .guide-body ol { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; }
+  .guide-body li { margin-bottom: 8px; }
+  .guide-body .gnote { font-size: 11.5px; color: var(--muted); margin: 12px 0 0; }
+  .banner {
+    background: linear-gradient(90deg, rgba(255,206,107,.16), rgba(255,122,138,.16));
+    border-bottom: 1px solid var(--line);
+    color: #ffd98a; font-size: 13px; text-align: center; padding: 10px 18px;
+  }
+  .banner b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="banner">
+  ⚠️ <b>Disclaimer:</b> Educational estimates only — <b>not tax, legal, or financial advice.</b>
+  Uses simplified 2025 figures; verify with a qualified CPA before making any decisions.
+</div>
+<header>
+  <h1>💸 Comp &amp; Tax Explorer</h1>
+  <p>Estimate take-home pay across states by visa/residency status — and see how 401(k) and mega-backdoor Roth change the picture. Educational estimates only, 2025 figures.</p>
+  <button id="shareBtn" class="sharebtn">🔗 Copy share link</button>
+</header>
+
+<details class="guide">
+  <summary>📖 How to use this — 30-second guide</summary>
+  <div class="guide-body">
+    <ol>
+      <li><b>Enter your pay</b> (top-left): base, bonus, RSU, ESPP — then pick your <b>filing status, visa/residency, and state</b>.</li>
+      <li><b>Read your take-home</b> up top: gross, total tax, net, and your effective/marginal rate, with a breakdown of where every dollar goes.</li>
+      <li><b>Drag the shelter sliders</b> (401k, Roth, HSA, IRA, mega-backdoor) and watch the tax impact update live — <span style="color:var(--accent2)">green</span> saves tax now, <span style="color:var(--accent)">blue</span> grows tax-free later.</li>
+      <li><b>Compare</b> take-home across states and across 401(k) strategies in the tables.</li>
+      <li><b>Per-paycheck calculator:</b> enter your salary per check and a target take-home → it tells you the exact <b>%</b> to set for pre-tax / Roth / after-tax at your provider (e.g. Fidelity).</li>
+      <li><b>Project</b> where your Roth vs Traditional dollars land at retirement — tick <b>Fair comparison</b> for the rigorous apples-to-apples version.</li>
+      <li>Hit <b>🔗 Copy share link</b> to bookmark or send your exact setup — every input is saved in the URL.</li>
+    </ol>
+    <p class="gnote">Runs 100% in your browser — nothing is uploaded or stored. Educational estimates only, not tax advice.</p>
+  </div>
+</details>
+
+<div class="wrap">
+  <!-- ============ INPUTS ============ -->
+  <div class="panel" id="inputs">
+    <h2>Your Compensation</h2>
+    <div class="field">
+      <label>Base salary <span class="hint" title="Annual gross base pay">?</span></label>
+      <input type="number" id="base" value="180000" min="0" step="1000" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Bonus</label>
+        <input type="number" id="bonus" value="20000" min="0" step="1000" />
+      </div>
+      <div class="field">
+        <label>RSU (vesting/yr)</label>
+        <input type="number" id="rsu" value="60000" min="0" step="1000" />
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>ESPP contribution <span class="hint" title="After-tax payroll deduction used to buy stock">?</span></label>
+        <input type="number" id="espp" value="0" min="0" step="500" />
+      </div>
+      <div class="field">
+        <label>ESPP discount %</label>
+        <input type="number" id="esppDisc" value="15" min="0" max="50" step="1" />
+      </div>
+    </div>
+
+    <h2 style="margin-top:18px;">Status</h2>
+    <div class="field">
+      <label>Filing status</label>
+      <select id="filing">
+        <option value="single">Single</option>
+        <option value="mfj">Married filing jointly</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Visa / citizenship status</label>
+      <select id="status">
+        <option value="citizen">US Citizen</option>
+        <option value="gc">Green Card holder</option>
+        <option value="resident">H-1B / L-1 / O-1 (tax resident)</option>
+        <option value="tn">TN (USMCA — Canada/Mexico professional)</option>
+        <option value="nra">F-1 / J-1 student — nonresident (NRA)</option>
+        <option value="nra_india">F-1 from India — nonresident (treaty)</option>
+      </select>
+      <div class="toggle-note" id="statusNote"></div>
+    </div>
+
+    <h2 style="margin-top:18px;">Retirement &amp; Tax Shelters</h2>
+    <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 14px;">Drag a slider — the tax impact updates live. <span class="tag pre">pre-tax</span> lowers taxes now; <span class="tag roth">Roth</span> is taxed now, tax-free later.</p>
+
+    <div class="ctl">
+      <label>Traditional 401(k) <span class="tag pre">pre-tax</span></label>
+      <div class="ctlrow">
+        <input type="range" id="t401k_r" min="0" max="23500" step="500" value="23500" />
+        <input type="number" id="t401k" value="23500" min="0" step="500" />
+      </div>
+      <div class="impact" id="t401k_i"></div>
+    </div>
+
+    <div class="ctl">
+      <label>Roth 401(k) <span class="tag roth">Roth</span></label>
+      <div class="ctlrow">
+        <input type="range" id="roth401k_r" min="0" max="23500" step="500" value="0" />
+        <input type="number" id="roth401k" value="0" min="0" step="500" />
+      </div>
+      <div class="impact" id="roth401k_i"></div>
+    </div>
+
+    <div class="ctl">
+      <label>HSA <span class="tag pre">pre-tax + FICA</span></label>
+      <div class="ctlrow">
+        <input type="range" id="hsa_r" min="0" max="8550" step="50" value="0" />
+        <input type="number" id="hsa" value="0" min="0" step="50" />
+      </div>
+      <div class="impact" id="hsa_i"></div>
+    </div>
+
+    <div class="ctl">
+      <label>Roth IRA / Backdoor <span class="tag roth">Roth</span></label>
+      <div class="ctlrow">
+        <input type="range" id="rothIra_r" min="0" max="7000" step="500" value="0" />
+        <input type="number" id="rothIra" value="0" min="0" step="500" />
+      </div>
+      <div class="impact" id="rothIra_i"></div>
+    </div>
+
+    <div class="ctl">
+      <label>Mega-backdoor Roth (after-tax 401k) <span class="tag roth">Roth</span></label>
+      <div class="ctlrow">
+        <input type="range" id="mega_r" min="0" max="46500" step="500" value="0" />
+        <input type="number" id="mega" value="0" min="0" step="500" />
+      </div>
+      <div class="impact" id="mega_i"></div>
+    </div>
+
+    <div class="field">
+      <label>Employer 401(k) match</label>
+      <input type="number" id="match" value="9000" min="0" step="500" />
+    </div>
+    <div class="toggle-note" id="limitNote"></div>
+
+    <h2 style="margin-top:18px;">State</h2>
+    <div class="field">
+      <label>Primary state</label>
+      <select id="state"></select>
+    </div>
+  </div>
+
+  <!-- ============ RESULTS ============ -->
+  <div>
+    <div class="cards">
+      <div class="card blue"><div class="k">Gross comp</div><div class="v" id="cGross">—</div></div>
+      <div class="card warn"><div class="k">Total tax</div><div class="v" id="cTax">—</div></div>
+      <div class="card green"><div class="k">Take-home</div><div class="v" id="cNet">—</div></div>
+      <div class="card"><div class="k">Effective / Marginal</div><div class="v" id="cRate" style="font-size:18px;">—</div></div>
+    </div>
+
+    <div class="panel">
+      <h2>Where your money goes</h2>
+      <div class="legend">
+        <span><i class="dot" style="background:#46d6a0"></i>Take-home</span>
+        <span><i class="dot" style="background:#6c8cff"></i>Federal</span>
+        <span><i class="dot" style="background:#ffce6b"></i>State</span>
+        <span><i class="dot" style="background:#ff7a8a"></i>FICA</span>
+        <span><i class="dot" style="background:#8b93b5"></i>401(k) + after-tax</span>
+      </div>
+      <div class="bar" id="bar"></div>
+
+      <table>
+        <thead><tr><th>Line item</th><th>Amount</th><th>% of gross</th></tr></thead>
+        <tbody id="breakdown"></tbody>
+      </table>
+
+      <details>
+        <summary>How status affects your taxes</summary>
+        <ul class="notes" id="statusExplain" style="margin-top:8px;"></ul>
+      </details>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>Compare take-home across states</h2>
+      <table class="compare">
+        <thead><tr><th>State</th><th>State tax</th><th>Total tax</th><th>Effective</th><th>Take-home</th></tr></thead>
+        <tbody id="compare"></tbody>
+      </table>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>Compare 401(k) scenarios <span style="text-transform:none;color:#6f7aa0;font-weight:400">— in your selected state</span></h2>
+      <table class="compare">
+        <thead><tr><th>Scenario</th><th>Pre-tax</th><th>After-tax</th><th>Total tax</th><th>Cash take-home</th><th>Saved for retirement</th><th>Net worth Δ/yr</th></tr></thead>
+        <tbody id="scenarios"></tbody>
+      </table>
+      <div class="toggle-note" style="margin-top:12px;">
+        <b>Net worth Δ/yr</b> = cash take-home + everything diverted into your 401(k) (your contributions + employer match). It's the truest "what did this year add to my wealth" number — money in the 401(k) is still yours, just illiquid. Maxing pre-tax + mega-backdoor lowers your <i>cash</i> but raises your <i>net worth</i> the most by capturing tax savings and match.
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>401(k) &amp; mega-backdoor impact</h2>
+      <ul class="notes" id="shelterExplain"></ul>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>Per-paycheck contribution calculator</h2>
+      <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 12px;">Strategy: max your elective as <b>pre-tax</b>, hit a target take-home, and route the rest to <b>after-tax → Roth</b>. Uses the filing status &amp; state selected on the left.</p>
+      <div class="pc_grid">
+        <div class="field">
+          <label>Gross salary / paycheck</label>
+          <input type="number" id="pc_salary" value="5000" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>Pay frequency</label>
+          <select id="pc_freq">
+            <option value="26">Biweekly (26/yr)</option>
+            <option value="24">Semi-monthly (24/yr)</option>
+            <option value="12">Monthly (12/yr)</option>
+            <option value="52">Weekly (52/yr)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Paychecks left this year</label>
+          <input type="number" id="pc_remaining" value="13" min="1" step="1" />
+        </div>
+        <div class="field">
+          <label>Target take-home / check</label>
+          <input type="number" id="pc_target" value="3000" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>Elective contributed YTD <span class="hint" title="Pre-tax + Roth 401(k) so far">?</span></label>
+          <input type="number" id="pc_electiveYTD" value="12000" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>…of which Roth YTD <span class="hint" title="Roth 401(k) portion contributed so far — used for the cost-of-waiting figure">?</span></label>
+          <input type="number" id="pc_rothYTD" value="6000" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>After-tax contributed YTD</label>
+          <input type="number" id="pc_aftertaxYTD" value="0" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>Employer match (full year)</label>
+          <input type="number" id="pc_match" value="6000" min="0" step="100" />
+        </div>
+        <div class="field">
+          <label>Pre-tax benefits / check <span class="hint" title="HSA + medical/dental/vision premiums withheld pre-tax">?</span></label>
+          <input type="number" id="pc_benefits" value="150" min="0" step="10" />
+        </div>
+        <div class="field">
+          <label>Taxes withheld / check <span class="hint" title="The total employee-taxes line from your payslip (FICA + federal + state). Ideally from a check with $0 pre-tax 401k.">?</span></label>
+          <input type="number" id="pc_taxes" value="1500" min="0" step="50" />
+        </div>
+      </div>
+      <div id="pc_out"></div>
+    </div>
+
+    <div class="panel" style="margin-top:20px;">
+      <h2>Projected year-end balance &amp; long-term value</h2>
+      <p style="font-size:11.5px;color:#6f7aa0;margin:-6px 0 12px;">Where this year's 401(k) money lands by tax treatment (using the calculator above), then grown to retirement. After-tax is treated as converted to Roth.</p>
+      <div class="pc_grid">
+        <div class="field">
+          <label>Years to retirement</label>
+          <input type="number" id="pc_years" value="30" min="0" max="60" step="1" />
+        </div>
+        <div class="field">
+          <label>Expected return %/yr</label>
+          <input type="number" id="pc_return" value="7" min="0" max="20" step="0.5" />
+        </div>
+        <div class="field">
+          <label>Retirement tax rate % <span class="hint" title="Your expected effective tax rate when you withdraw traditional dollars in retirement">?</span></label>
+          <input type="number" id="pc_retrate" value="18" min="0" max="50" step="1" />
+        </div>
+      </div>
+      <label class="fairrow">
+        <input type="checkbox" id="pc_fair" />
+        Fair comparison — invest Traditional's up-front tax savings in a taxable account
+      </label>
+      <div class="field" id="pc_capgains_wrap" style="max-width:240px;margin-top:8px;display:none;">
+        <label>Capital-gains tax rate % <span class="hint" title="Tax on the side account's gains at withdrawal (federal LTCG + state). ~25% blended for a high earner in CA.">?</span></label>
+        <input type="number" id="pc_capgains" value="25" min="0" max="40" step="1" />
+      </div>
+      <div id="pc_proj"></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  ⚠️ Estimates for education/planning only — not tax advice. Uses 2025 federal &amp; FICA figures and simplified state brackets/standard deductions. Ignores local/city taxes (e.g. NYC), AMT, capital-gains treatment of held shares, credits, deductions beyond the standard deduction, and state-specific 401(k) quirks. Consult a CPA before acting.
+</footer>
+
+<script>
+// ---------- 2025 federal data ----------
+const FED_BRACKETS = {
+  single: [[0,.10],[11925,.12],[48475,.22],[103350,.24],[197300,.32],[250525,.35],[626350,.37]],
+  mfj:    [[0,.10],[23850,.12],[96950,.22],[206700,.24],[394600,.32],[501050,.35],[751600,.37]]
+};
+const FED_STD = { single: 15000, mfj: 30000 };
+const SS_WAGE_BASE = 176100;
+const SS_RATE = 0.062;
+const MEDICARE_RATE = 0.0145;
+const ADDL_MEDICARE_RATE = 0.009;
+const ADDL_MEDICARE_THRESHOLD = { single: 200000, mfj: 250000 };
+const LIMIT_402G = 23500;   // employee elective deferral (traditional + Roth 401k combined)
+const LIMIT_415C = 70000;   // total additions (employee + employer + after-tax)
+const LIMIT_IRA  = 7000;    // Roth/traditional IRA contribution limit (<50)
+const LIMIT_HSA  = { single: 4300, family: 8550 }; // self vs family coverage
+// Roth IRA direct-contribution MAGI phase-out (2025)
+const ROTH_PHASEOUT = { single: [150000, 165000], mfj: [236000, 246000] };
+
+// ---------- state data (simplified 2025) ----------
+// type: 'none' | 'flat' | 'brackets'. std = state standard deduction (single basis; MFJ doubled approx)
+const STATES = {
+  "CA": { name:"California", type:"brackets", std:5540, noHsaDeduct:true, brackets:[[0,.01],[10756,.02],[25499,.04],[40245,.06],[55866,.08],[70606,.093],[360659,.103],[432787,.113],[721314,.123]] },
+  "NY": { name:"New York", type:"brackets", std:8000, brackets:[[0,.04],[8500,.045],[11700,.0525],[13900,.0585],[80650,.0625],[215400,.0685],[1077550,.0965],[5000000,.103],[25000000,.109]] },
+  "NJ": { name:"New Jersey", type:"brackets", std:0, noHsaDeduct:true, brackets:[[0,.014],[20000,.0175],[35000,.035],[40000,.05525],[75000,.0637],[500000,.0897],[1000000,.1075]] },
+  "OR": { name:"Oregon", type:"brackets", std:2745, brackets:[[0,.0475],[4300,.0675],[10750,.0875],[125000,.099]] },
+  "MA": { name:"Massachusetts", type:"flat", rate:0.05, std:0 },
+  "IL": { name:"Illinois", type:"flat", rate:0.0495, std:0 },
+  "CO": { name:"Colorado", type:"flat", rate:0.044, std:0 },
+  "NC": { name:"North Carolina", type:"flat", rate:0.0425, std:12750 },
+  "GA": { name:"Georgia", type:"flat", rate:0.0539, std:12000 },
+  "AZ": { name:"Arizona", type:"flat", rate:0.025, std:14600 },
+  "TX": { name:"Texas", type:"none" },
+  "WA": { name:"Washington", type:"none" },
+  "FL": { name:"Florida", type:"none" },
+  "NV": { name:"Nevada", type:"none" },
+  "TN": { name:"Tennessee", type:"none" }
+};
+
+// ---------- helpers ----------
+const fmt = n => "$" + Math.round(n).toLocaleString("en-US");
+const pct = n => (n*100).toFixed(1) + "%";
+function setBadge(id, cls, html){ const el=document.getElementById(id); el.className="impact "+cls; el.innerHTML=html; }
+
+function progressive(income, brackets) {
+  if (income <= 0) return 0;
+  let tax = 0;
+  for (let i = 0; i < brackets.length; i++) {
+    const lo = brackets[i][0];
+    const rate = brackets[i][1];
+    const hi = i+1 < brackets.length ? brackets[i+1][0] : Infinity;
+    if (income > lo) tax += (Math.min(income, hi) - lo) * rate;
+    else break;
+  }
+  return tax;
+}
+function marginalRate(income, brackets) {
+  let r = brackets[0][1];
+  for (const [lo, rate] of brackets) if (income >= lo) r = rate;
+  return r;
+}
+
+// ---------- residency rules from status ----------
+function statusRules(status) {
+  // ficaExempt: NRA students/scholars exempt from Social Security + Medicare
+  // stdDeduction: NRAs generally cannot take standard deduction (India treaty exception)
+  switch (status) {
+    case "citizen": return { fica:true, std:true, label:"US Citizen" };
+    case "gc": return { fica:true, std:true, label:"Green Card holder" };
+    case "resident": return { fica:true, std:true, label:"Tax-resident worker (H-1B/L-1/O-1)" };
+    case "tn": return { fica:true, std:true, label:"TN professional (USMCA, tax resident)" };
+    case "nra": return { fica:false, std:false, label:"Nonresident alien student (F-1/J-1)" };
+    case "nra_india": return { fica:false, std:true, label:"Nonresident F-1 from India (treaty)" };
+  }
+}
+
+// ---------- core calculation ----------
+function getContribs() {
+  return {
+    t401k: +v("t401k"), roth401k: +v("roth401k"), hsa: +v("hsa"),
+    rothIra: +v("rothIra"), mega: +v("mega"), match: +v("match")
+  };
+}
+
+function calc(stateKey, contribs) {
+  const c = contribs || getContribs();
+  const base = +v("base"), bonus = +v("bonus"), rsu = +v("rsu");
+  const espp = +v("espp"), esppDisc = +v("esppDisc")/100;
+  const filing = v("filing"), status = v("status");
+  const rules = statusRules(status);
+
+  let t401k = Math.min(c.t401k, LIMIT_402G);
+  const roth401k = c.roth401k, hsa = c.hsa, rothIra = c.rothIra, mega = c.mega, match = c.match;
+
+  // ESPP discount = taxable ordinary income (disqualifying-disposition approximation)
+  const esppIncome = espp > 0 ? espp * (esppDisc/(1-esppDisc)) : 0;
+  const grossOrdinary = base + bonus + rsu + esppIncome;
+  const totalComp = grossOrdinary; // economic comp for % basis
+
+  // ----- Federal income tax: only pre-tax accounts (trad 401k + HSA) reduce taxable income -----
+  const fedPreTax = t401k + hsa;
+  const fedStd = rules.std ? (filing==="mfj" ? FED_STD.mfj : FED_STD.single) : 0;
+  const fedTaxable = Math.max(0, grossOrdinary - fedPreTax - fedStd);
+  const fedTax = progressive(fedTaxable, FED_BRACKETS[filing]);
+
+  // ----- FICA: HSA via payroll also escapes FICA; 401(k) does NOT -----
+  let ss = 0, medicare = 0;
+  const ficaWages = Math.max(0, base + bonus + rsu - hsa);
+  if (rules.fica) {
+    ss = Math.min(ficaWages, SS_WAGE_BASE) * SS_RATE;
+    medicare = ficaWages * MEDICARE_RATE;
+    const addlThresh = ADDL_MEDICARE_THRESHOLD[filing];
+    if (ficaWages > addlThresh) medicare += (ficaWages - addlThresh) * ADDL_MEDICARE_RATE;
+  }
+  const fica = ss + medicare;
+
+  // ----- State income tax: CA/NJ do NOT allow the HSA deduction -----
+  const st = STATES[stateKey];
+  const statePreTax = t401k + (st.noHsaDeduct ? 0 : hsa);
+  let stateTax = 0;
+  if (st.type !== "none") {
+    const stStd = rules.std ? (st.std * (filing==="mfj"?2:1)) : 0;
+    const stateTaxable = Math.max(0, grossOrdinary - statePreTax - stStd);
+    stateTax = st.type === "flat" ? stateTaxable * st.rate : progressive(stateTaxable, st.brackets);
+  }
+
+  const totalTax = fedTax + fica + stateTax;
+  // amounts diverted into accounts (still your money, just illiquid)
+  const retirementDiverted = t401k + roth401k + hsa + rothIra + mega;
+  const takeHome = totalComp - totalTax - retirementDiverted;
+
+  // MAGI for Roth IRA eligibility (Roth contributions don't lower it)
+  const magi = Math.max(0, grossOrdinary - t401k - hsa);
+  const [plo, phi] = ROTH_PHASEOUT[filing];
+  let rothStatus = "direct";
+  if (magi >= phi) rothStatus = "backdoor";
+  else if (magi > plo) rothStatus = "partial";
+
+  const fedMarginal = marginalRate(fedTaxable, FED_BRACKETS[filing]);
+  const stMarginal = st.type==="brackets" ? marginalRate(Math.max(0,grossOrdinary-statePreTax), st.brackets) : (st.type==="flat"?st.rate:0);
+  const ficaMarginal = rules.fica ? (ficaWages < SS_WAGE_BASE ? SS_RATE+MEDICARE_RATE : MEDICARE_RATE) : 0;
+  const marginal = fedMarginal + stMarginal + ficaMarginal;
+
+  return { base,bonus,rsu,esppIncome,totalComp,grossOrdinary,
+    t401k,roth401k,hsa,rothIra,mega,match,
+    fedTax,fedTaxable,ss,medicare,fica,stateTax,totalTax,takeHome,retirementDiverted,
+    magi,rothStatus,
+    effective: totalTax/totalComp, marginal, fedMarginal, stMarginal, ficaMarginal, rules, st };
+}
+
+function v(id){ return document.getElementById(id).value; }
+
+// ---------- per-paycheck contribution calculator ----------
+function renderPaycheck() {
+  const salary    = +v("pc_salary");
+  const ppy       = +v("pc_freq");
+  const remaining = +v("pc_remaining");
+  const target    = +v("pc_target");
+  const benefits  = +v("pc_benefits");
+  const electiveYTD = +v("pc_electiveYTD");
+  const aftertaxYTD = +v("pc_aftertaxYTD");
+  const match     = +v("pc_match");
+  const filing    = v("filing");
+  const stateKey  = v("state");
+
+  // 1) pre-tax % to finish the elective limit over the remaining checks
+  const electiveRoom = Math.max(0, LIMIT_402G - electiveYTD);
+  const preTaxPerCheck = remaining > 0 ? Math.min(electiveRoom / remaining, salary) : 0;
+
+  // 2) taxes per check: start from your real payslip tax line, then reduce by the
+  //    pre-tax 401(k) deduction at your marginal income-tax rate (FICA/SDI unaffected)
+  const baseTax = +v("pc_taxes");
+  const annualTaxable = (salary - benefits) * ppy;
+  const fedMarg = marginalRate(Math.max(0, annualTaxable - FED_STD[filing]), FED_BRACKETS[filing]);
+  const st = STATES[stateKey];
+  let stMarg = 0;
+  if (st.type === "flat") stMarg = st.rate;
+  else if (st.type === "brackets") stMarg = marginalRate(Math.max(0, annualTaxable - (st.std||0)*(filing==="mfj"?2:1)), st.brackets);
+  const reductionRate = fedMarg + stMarg;
+  const tax = { total: Math.max(0, baseTax - preTaxPerCheck * reductionRate), reductionRate };
+
+  // 3) after-tax to land on target net (Roth = 0 in this strategy)
+  let afterTaxPerCheck = salary - benefits - preTaxPerCheck - tax.total - target;
+  let warn = "";
+  if (afterTaxPerCheck < 0) {
+    warn = `Your target of ${fmt(target)} is higher than what's left after maxing pre-tax (${fmt(salary - benefits - preTaxPerCheck - tax.total)}). No room for after-tax at this target — lower the target or the pre-tax amount.`;
+    afterTaxPerCheck = 0;
+  }
+  const net = salary - benefits - preTaxPerCheck - tax.total - afterTaxPerCheck;
+
+  // 415(c) headroom check
+  const afterTaxEnd = aftertaxYTD + afterTaxPerCheck * remaining;
+  const electiveEnd = Math.min(LIMIT_402G, electiveYTD + preTaxPerCheck * remaining);
+  const additions = electiveEnd + afterTaxEnd + match;
+  const room415 = LIMIT_415C - additions;
+  if (room415 < 0 && !warn) warn = `After-tax would push you ${fmt(-room415)} over the ${fmt(LIMIT_415C)} §415(c) cap — trim the after-tax %.`;
+
+  // cost of having contributed Roth instead of pre-tax so far this year.
+  // uses your TRUE marginal income-tax rate (from full comp up top), not the
+  // salary-only withholding rate — because this is actual tax, not withholding.
+  const rothYTD = +v("pc_rothYTD");
+  const main = calc(stateKey);
+  const costFed = rothYTD * main.fedMarginal;
+  const costState = rothYTD * main.stMarginal;
+  const costRate = main.fedMarginal + main.stMarginal;
+  const costWaiting = costFed + costState;
+
+  const preTaxPct  = salary > 0 ? preTaxPerCheck / salary * 100 : 0;
+  const afterTaxPct = salary > 0 ? afterTaxPerCheck / salary * 100 : 0;
+  const setPre = Math.ceil(preTaxPct);   // round up so the elective finishes
+  const setAft = Math.round(afterTaxPct);
+
+  const rows = [
+    ["Gross salary / check", salary],
+    ["− Pre-tax benefits (HSA, medical…)", -benefits],
+    [`− Pre-tax 401(k) — set <b>${setPre}%</b>`, -preTaxPerCheck],
+    ["− Est. taxes (FICA + fed + state)", -tax.total],
+    [`− After-tax 401(k) — set <b>${setAft}%</b>`, -afterTaxPerCheck],
+    ["= Take-home / check", net, "total"]
+  ];
+
+  document.getElementById("pc_out").innerHTML = `
+    <div class="pc_pcts">
+      <div class="pc_pct"><div class="pcv">${setPre}%</div><div class="pck">Pre-tax</div></div>
+      <div class="pc_pct muted"><div class="pcv">0%</div><div class="pck">Roth</div></div>
+      <div class="pc_pct"><div class="pcv">${setAft}%</div><div class="pck">After-tax → Roth</div></div>
+    </div>
+    <table><tbody>${rows.map(([k,val,cls]) =>
+      `<tr class="${cls==='total'?'total':''}"><td>${k}</td><td>${val<0?'−':''}${fmt(Math.abs(val))}</td></tr>`).join("")}</tbody></table>
+    <ul class="notes" style="margin-top:12px;">
+      <li>Lands you at <b>${fmt(net)}</b>/check (target ${fmt(target)}).</li>
+      <li>Year-end elective: <b>${fmt(electiveEnd)}</b> / ${fmt(LIMIT_402G)} ${electiveEnd>=LIMIT_402G?'✅ maxed':'(short — raise pre-tax %)'}. Fidelity auto-stops pre-tax at the cap.</li>
+      <li>Year-end after-tax: <b>${fmt(afterTaxEnd)}</b>. Total additions <b>${fmt(additions)}</b> / ${fmt(LIMIT_415C)} cap → ${room415>=0?fmt(room415)+' room left':'<span style="color:var(--warn)">over by '+fmt(-room415)+'</span>'}.</li>
+      ${warn?`<li><span class="flag warn">heads up</span> ${warn}</li>`:''}
+      <li style="color:#6f7aa0">Net is withholding-based; your true marginal rate is higher, so extra benefit returns as a refund. Estimate only.</li>
+    </ul>
+    ${rothYTD>0?`<div class="pc_cost">
+      <div>💸 Cost of contributing <b>${fmt(rothYTD)}</b> as Roth instead of pre-tax so far this year:</div>
+      <div class="pcbig">${fmt(costWaiting)} <span>extra tax paid</span></div>
+      <div style="font-size:11.5px;color:#9aa3c0">≈ ${fmt(costFed)} federal + ${fmt(costState)} state, at your ${pct(costRate)} true marginal income-tax rate. Not all lost — you still got ${fmt(rothYTD)} of Roth; with mega-backdoor room open, this is the avoidable slice. Switching to pre-tax now stops it.</div>
+    </div>`:''}`;
+
+  // ---- projected year-end split + long-term value ----
+  const preTaxYTD = Math.max(0, electiveYTD - rothYTD);
+  const preTaxRemaining = Math.max(0, electiveEnd - electiveYTD); // pre-tax added (elective capped)
+  const tradYE = preTaxYTD + preTaxRemaining + match;             // pre-tax + employer match
+  const rothYE = rothYTD + afterTaxEnd;                           // Roth 401k + converted after-tax
+  const totalYE = tradYE + rothYE || 1;
+
+  const years = +v("pc_years"), ret = +v("pc_return")/100, retRate = +v("pc_retrate")/100;
+  const growth = Math.pow(1 + ret, years);
+  const tradFV = tradYE * growth, tradSpend = tradFV * (1 - retRate);
+  const rothFV = rothYE * growth; // already tax-free
+
+  // fair comparison: invest Traditional's up-front tax saving (on YOUR pre-tax $, not the
+  // match) in a taxable side account, taxed at capital-gains rate on its gains at the end
+  const fair = document.getElementById("pc_fair").checked;
+  const capRate = +v("pc_capgains")/100;
+  document.getElementById("pc_capgains_wrap").style.display = fair ? "" : "none";
+  const yourPreTax = preTaxYTD + preTaxRemaining;       // excludes employer match
+  const sideContrib = yourPreTax * costRate;            // the deduction you pocketed
+  const sideFV = sideContrib * growth;
+  const sideSpend = sideContrib + (sideFV - sideContrib) * (1 - capRate);
+
+  const ltRows = [["Traditional (pre-tax + match)", tradFV, tradSpend]];
+  if (fair) ltRows.push([`↳ Tax saving invested @ ${pct(capRate)} cap-gains`, sideFV, sideSpend]);
+  ltRows.push(["Roth", rothFV, rothFV, true]);
+  const totFV = tradFV + (fair?sideFV:0) + rothFV;
+  const totSpend = tradSpend + (fair?sideSpend:0) + rothFV;
+
+  document.getElementById("pc_proj").innerHTML = `
+    <div class="legend">
+      <span><i class="dot" style="background:#6c8cff"></i>Traditional</span>
+      <span><i class="dot" style="background:#46d6a0"></i>Roth</span>
+    </div>
+    <div class="bar">
+      <div class="seg" style="background:#6c8cff;width:${tradYE/totalYE*100}%" title="${fmt(tradYE)}"></div>
+      <div class="seg" style="background:#46d6a0;width:${rothYE/totalYE*100}%" title="${fmt(rothYE)}"></div>
+    </div>
+    <table><thead><tr><th>This year's 401(k) money</th><th>Amount</th><th>Share</th></tr></thead><tbody>
+      <tr><td>Traditional (pre-tax + employer match)</td><td>${fmt(tradYE)}</td><td>${pct(tradYE/totalYE)}</td></tr>
+      <tr><td>Roth (Roth 401k + after-tax → Roth)</td><td>${fmt(rothYE)}</td><td>${pct(rothYE/totalYE)}</td></tr>
+      <tr class="total"><td>Total contributed this year</td><td>${fmt(tradYE+rothYE)}</td><td>100%</td></tr>
+    </tbody></table>
+
+    <p style="font-size:12.5px;color:var(--muted);margin:16px 0 6px;">Grown ${years} yrs at ${pct(ret)} — value of <b>just this year's</b> contributions at retirement:</p>
+    <table><thead><tr><th></th><th>At retirement</th><th>Spendable (after tax)</th></tr></thead><tbody>
+      ${ltRows.map(([k,fv,sp,isRoth]) => `<tr><td>${k}</td><td>${fmt(fv)}</td><td>${fmt(sp)}${isRoth?' <span style="color:var(--accent2)">(tax-free)</span>':''}</td></tr>`).join("")}
+      <tr class="total"><td>Total spendable</td><td>${fmt(totFV)}</td><td>${fmt(totSpend)}</td></tr>
+    </tbody></table>
+    <p style="font-size:11px;color:#6f7aa0;margin-top:10px;">${fair
+      ? `Apples-to-apples: Traditional's up-front saving (${fmt(sideContrib)} = your ${fmt(yourPreTax)} pre-tax × ${pct(costRate)}) is invested in a taxable account. Now Traditional+side vs Roth is a clean bet on tax-rate-now (${pct(costRate)}) vs tax-rate-later (${pct(retRate)}).`
+      : `Principal only (no growth on prior-year balances). Traditional looks bigger partly because it includes the employer match and pre-tax dollars — tick "Fair comparison" to invest its up-front tax saving alongside and compare honestly.`}</p>`;
+}
+
+// ---------- render ----------
+function render() {
+  const stateKey = v("state");
+  const r = calc(stateKey);
+
+  document.getElementById("cGross").textContent = fmt(r.totalComp);
+  document.getElementById("cTax").textContent = fmt(r.totalTax);
+  document.getElementById("cNet").textContent = fmt(r.takeHome);
+  document.getElementById("cRate").textContent = pct(r.effective) + " / " + pct(r.marginal);
+
+  // bar
+  const segs = [
+    ["#46d6a0", r.takeHome],
+    ["#6c8cff", r.fedTax],
+    ["#ffce6b", r.stateTax],
+    ["#ff7a8a", r.fica],
+    ["#8b93b5", r.retirementDiverted]
+  ];
+  const bar = document.getElementById("bar");
+  bar.innerHTML = segs.map(([c,val]) =>
+    `<div class="seg" style="background:${c};width:${Math.max(0,val/r.totalComp*100)}%" title="${fmt(val)}"></div>`).join("");
+
+  // breakdown table
+  const rows = [
+    ["Base salary", r.base], ["Bonus", r.bonus], ["RSU (vested)", r.rsu]];
+  if (r.esppIncome>0) rows.push(["ESPP discount income", r.esppIncome]);
+  rows.push(["— Gross compensation", r.totalComp, "total"]);
+  rows.push(["Federal income tax", -r.fedTax]);
+  rows.push(["Social Security", -r.ss]);
+  rows.push(["Medicare", -r.medicare]);
+  rows.push([`${r.st.name} state tax`, -r.stateTax]);
+  if (r.t401k>0)   rows.push(["Traditional 401(k) — your $, pre-tax", -r.t401k]);
+  if (r.roth401k>0)rows.push(["Roth 401(k) — your $, after-tax", -r.roth401k]);
+  if (r.hsa>0)     rows.push(["HSA — your $, pre-tax", -r.hsa]);
+  if (r.rothIra>0) rows.push(["Roth IRA / backdoor — your $, after-tax", -r.rothIra]);
+  if (r.mega>0)    rows.push(["Mega-backdoor — your $, after-tax", -r.mega]);
+  rows.push(["— Cash take-home", r.takeHome, "total"]);
+
+  document.getElementById("breakdown").innerHTML = rows.map(([k,val,cls]) => {
+    const sign = val<0 ? "-" : "";
+    return `<tr class="${cls==='total'?'total':''}"><td>${k}</td><td>${sign}${fmt(Math.abs(val))}</td><td>${pct(Math.abs(val)/r.totalComp)}</td></tr>`;
+  }).join("");
+
+  // status explanation
+  const se = [];
+  se.push(`<li><b>${r.rules.label}.</b></li>`);
+  se.push(r.rules.fica
+    ? `<li>✅ Pays full <b>FICA</b> (Social Security 6.2% up to ${fmt(SS_WAGE_BASE)} + Medicare 1.45%).</li>`
+    : `<li>🟢 <b>FICA-exempt</b> — no Social Security or Medicare withheld (saves ~7.65% on wages). NRA students/scholars qualify.</li>`);
+  se.push(r.rules.std
+    ? `<li>✅ Eligible for the <b>standard deduction</b> (${fmt(r.rules.fica?FED_STD[v('filing')]:FED_STD[v('filing')])}).</li>`
+    : `<li>🔴 <b>No standard deduction</b> — NRAs are taxed from the first dollar (itemized only). This often offsets the FICA savings.</li>`);
+  if (v("status").startsWith("nra")) se.push(`<li>NRAs generally file <b>1040-NR</b> and cannot file jointly; "Married filing jointly" is shown for comparison only.</li>`);
+  document.getElementById("statusExplain").innerHTML = se.join("");
+
+  // compare states
+  const comp = Object.keys(STATES).map(k => {
+    const c = calc(k);
+    return { k, name:STATES[k].name, stateTax:c.stateTax, total:c.totalTax, eff:c.effective, net:c.takeHome };
+  }).sort((a,b)=> b.net - a.net);
+  const bestNet = comp[0].net;
+  document.getElementById("compare").innerHTML = comp.map(c =>
+    `<tr ${c.k===stateKey?'style="background:rgba(108,140,255,.08)"':''}>
+      <td>${c.name}${c.k===stateKey?' <span class="flag">selected</span>':''}</td>
+      <td>${fmt(c.stateTax)}</td>
+      <td>${fmt(c.total)}</td>
+      <td>${pct(c.eff)}</td>
+      <td class="${c.net===bestNet?'best':''}">${fmt(c.net)}</td>
+    </tr>`).join("");
+
+  // 401(k) scenario comparison (in selected state)
+  const cur = getContribs();
+  const matchVal = cur.match;
+  const megaMax = Math.max(0, LIMIT_415C - LIMIT_402G - matchVal);
+  const scenDefs = [
+    ["No 401(k)", {...cur, t401k:0, roth401k:0, mega:0}],
+    ["Pre-tax max only", {...cur, t401k:LIMIT_402G, roth401k:0, mega:0}],
+    ["Pre-tax max + mega-backdoor", {...cur, t401k:LIMIT_402G, roth401k:0, mega:megaMax}],
+    ["Your current plan", undefined]
+  ];
+  const scen = scenDefs.map(([label, ov]) => {
+    const c = calc(stateKey, ov);
+    const saved = c.retirementDiverted + c.match;
+    return { label, pre:c.t401k + c.hsa, after:c.roth401k + c.rothIra + c.mega,
+             tax:c.totalTax, cash:c.takeHome,
+             saved, netWorth: c.takeHome + saved, current: ov===undefined };
+  });
+  const baseNetWorth = scen[0].netWorth; // "No 401(k)" baseline
+  const bestNW = Math.max(...scen.map(s=>s.netWorth));
+  document.getElementById("scenarios").innerHTML = scen.map(s =>
+    `<tr ${s.current?'style="background:rgba(108,140,255,.08)"':''}>
+      <td>${s.label}${s.current?' <span class="flag">current</span>':''}</td>
+      <td>${fmt(s.pre)}</td>
+      <td>${fmt(s.after)}</td>
+      <td>${fmt(s.tax)}</td>
+      <td>${fmt(s.cash)}</td>
+      <td>${fmt(s.saved)}</td>
+      <td class="${s.netWorth===bestNW?'best':''}">${fmt(s.netWorth)}${s.netWorth>baseNetWorth?' <span style="color:#46d6a0">(+'+fmt(s.netWorth-baseNetWorth)+')</span>':''}</td>
+    </tr>`).join("");
+
+  // ----- live per-field impact badges -----
+  const baseC = getContribs();
+  function preImpact(field) { // tax saved by current contribution in this field
+    return calc(stateKey, {...baseC, [field]:0}).totalTax - r.totalTax;
+  }
+  // Traditional 401(k) — pre-tax
+  setBadge("t401k_i", "save", r.t401k>0
+    ? `↓ Saves <b>${fmt(preImpact("t401k"))}</b>/yr in income tax (no FICA break). Each extra $1k ≈ ${fmt(1000*(r.fedMarginal+r.stMarginal))} saved.`
+    : `Pre-tax: each $1,000 here would cut income tax ~${fmt(1000*(r.fedMarginal+r.stMarginal))}.`);
+  // Roth 401(k) — after-tax, shares the $23.5k limit
+  const over402 = (r.t401k + r.roth401k) > LIMIT_402G;
+  setBadge("roth401k_i", over402 ? "warn" : "roth",
+    (over402 ? `⚠ Traditional + Roth 401(k) = ${fmt(r.t401k+r.roth401k)} exceeds the ${fmt(LIMIT_402G)} combined limit. ` : "") +
+    (r.roth401k>0
+      ? `No tax change now — ${fmt(r.roth401k)} of taxed dollars grows tax-free.`
+      : `Roth: taxed now, withdrawn tax-free. Shares the ${fmt(LIMIT_402G)} limit with traditional.`));
+  // HSA — pre-tax + FICA
+  setBadge("hsa_i", "save", r.hsa>0
+    ? `↓ Saves <b>${fmt(preImpact("hsa"))}</b>/yr (income tax + FICA${r.st.noHsaDeduct?`, but ${r.st.name} still taxes it`:""}). Triple tax-advantaged.`
+    : `Triple-advantaged: deductible, grows tax-free, tax-free for medical.${r.st.noHsaDeduct?` Note: ${r.st.name} doesn't allow the deduction.`:""}`);
+  // Roth IRA / backdoor — after-tax, MAGI-gated
+  const rothMsg = {
+    direct:   `MAGI ${fmt(r.magi)} is under the limit — contribute directly.`,
+    partial:  `MAGI ${fmt(r.magi)} is in the phase-out — direct amount is reduced; the <b>backdoor</b> sidesteps it.`,
+    backdoor: `MAGI ${fmt(r.magi)} is over the limit → direct Roth IRA isn't allowed. Use the <b>backdoor</b> (non-deductible IRA → convert).`
+  }[r.rothStatus];
+  setBadge("rothIra_i", r.rothStatus==="direct" ? "roth" : "warn",
+    `No tax change now (already-taxed). ${rothMsg}`);
+  // Mega-backdoor — after-tax, 415(c)-gated
+  const totalAdditions = r.t401k + r.roth401k + r.mega + r.match;
+  const room415 = LIMIT_415C - totalAdditions;
+  setBadge("mega_i", room415<0 ? "warn" : "roth", room415<0
+    ? `⚠ Total 401(k) additions ${fmt(totalAdditions)} exceed the ${fmt(LIMIT_415C)} §415(c) cap by ${fmt(-room415)}.`
+    : `No tax change now. ${fmt(room415)} of after-tax room left under the ${fmt(LIMIT_415C)} cap.`);
+
+  // ----- shelter explanation -----
+  const fedM = r.fedMarginal, stM = r.stMarginal;
+  const sh = [];
+  sh.push(`<li><b>Traditional 401(k)</b> <span class="tag pre">pre-tax</span> — lowers income tax at your ${pct(fedM)} fed + ${pct(stM)} state marginal rate; no FICA break. Limit ${fmt(LIMIT_402G)}.</li>`);
+  sh.push(`<li><b>Roth 401(k)</b> <span class="tag roth">Roth</span> — same ${fmt(LIMIT_402G)} bucket as traditional, but taxed now / tax-free later. Favor it when you expect higher future rates.</li>`);
+  sh.push(`<li><b>HSA</b> <span class="tag pre">pre-tax + FICA</span> — the only triple-advantaged account: deductible (also dodges FICA via payroll), tax-free growth, tax-free medical withdrawals. Limit ${fmt(LIMIT_HSA.single)} self / ${fmt(LIMIT_HSA.family)} family. CA &amp; NJ don't give the state deduction.</li>`);
+  sh.push(`<li><b>Roth IRA / Backdoor</b> <span class="tag roth">Roth</span> — ${fmt(LIMIT_IRA)} limit. Over a MAGI of ${fmt(ROTH_PHASEOUT[v("filing")][1])} (${v("filing")==="mfj"?"MFJ":"single"}) you can't contribute directly, so high earners use the <b>backdoor</b>: non-deductible Traditional IRA → convert to Roth (tax-free if you hold no other pre-tax IRA — watch the pro-rata rule).</li>`);
+  sh.push(`<li><b>Mega-backdoor Roth</b> <span class="tag roth">Roth</span> — after-tax 401(k) up to the ${fmt(LIMIT_415C)} §415(c) cap (you ${fmt(r.t401k+r.roth401k)} + employer ${fmt(r.match)} + after-tax). <b>${room415>=0?fmt(room415)+' of room left':'OVER by '+fmt(-room415)}</b>.${room415<0?' <span class="flag warn">reduce</span>':''} No deduction now; the whole gain grows tax-free.</li>`);
+  if (r.t401k < LIMIT_402G) sh.push(`<li><span class="flag warn">tip</span> You're below the ${fmt(LIMIT_402G)} elective limit — adding ${fmt(LIMIT_402G-r.t401k)} more to traditional saves ~${fmt((LIMIT_402G-r.t401k)*(fedM+stM))} in tax.</li>`);
+  document.getElementById("shelterExplain").innerHTML = sh.join("");
+
+  renderPaycheck();
+
+  // status note + limit note
+  document.getElementById("statusNote").textContent = r.rules.fica
+    ? "Full FICA + standard deduction." : (r.rules.std ? "FICA-exempt; standard deduction via tax treaty." : "FICA-exempt; no standard deduction (taxed from $0).");
+  document.getElementById("limitNote").innerHTML = room415>=0
+    ? `Combined 401(k) additions: <b>${fmt(totalAdditions)}</b> / ${fmt(LIMIT_415C)} limit.`
+    : `<span style="color:var(--warn)">Over the ${fmt(LIMIT_415C)} §415(c) limit by ${fmt(-room415)}.</span>`;
+}
+
+// ---------- init ----------
+const stSel = document.getElementById("state");
+Object.keys(STATES).forEach(k => {
+  const o = document.createElement("option");
+  o.value = k; o.textContent = STATES[k].name + (STATES[k].type==="none"?" (no income tax)":"");
+  stSel.appendChild(o);
+});
+stSel.value = "CA";
+
+// keep each slider <-> number field in sync
+function pair(id) {
+  const n = document.getElementById(id), rg = document.getElementById(id + "_r");
+  rg.addEventListener("input", () => { n.value = rg.value; render(); });
+  n.addEventListener("input", () => { rg.value = n.value; });
+}
+["t401k","roth401k","hsa","rothIra","mega"].forEach(pair);
+
+// ---- save/share scenario via URL hash ----
+function serializeState() {
+  const params = new URLSearchParams();
+  document.querySelectorAll("input:not([type=range]),select").forEach(el => {
+    if (!el.id) return;
+    params.set(el.id, el.type === "checkbox" ? (el.checked ? "1" : "0") : el.value);
+  });
+  history.replaceState(null, "", "#" + params.toString());
+}
+function loadState() {
+  if (!location.hash || location.hash.length < 2) return;
+  new URLSearchParams(location.hash.slice(1)).forEach((val, id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === "checkbox") el.checked = (val === "1");
+    else { el.value = val; const rg = document.getElementById(id + "_r"); if (rg) rg.value = val; }
+  });
+}
+document.getElementById("shareBtn").addEventListener("click", () => {
+  serializeState();
+  const btn = document.getElementById("shareBtn"), txt = btn.textContent;
+  navigator.clipboard.writeText(location.href)
+    .then(() => { btn.textContent = "✓ Link copied!"; })
+    .catch(() => { btn.textContent = "Copy this URL ↑"; })
+    .finally(() => setTimeout(() => btn.textContent = txt, 1600));
+});
+
+// number fields + selects re-render on change (sliders handled by pair())
+document.querySelectorAll("input:not([type=range]),select").forEach(el => el.addEventListener("input", () => { render(); serializeState(); }));
+
+loadState();   // restore a shared scenario, if any, before first render
+render();
+</script>
+</body>
+</html>

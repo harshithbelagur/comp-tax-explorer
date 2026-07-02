@@ -1,0 +1,25 @@
+name: Deploy to Hugging Face Space
+
+# Auto-deploys this repo to the HF static Space on every push to main.
+# Requires a repo secret HF_TOKEN (a Hugging Face *write* token).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git push --force \
+            "https://harshith99:${HF_TOKEN}@huggingface.co/spaces/harshith99/comp-tax-explorer" \
+            main
